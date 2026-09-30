@@ -109,6 +109,7 @@ erDiagram
 
 ## Author
 
-**[Your Name]** | [LinkedIn](https://www.linkedin.com/in/your-profile)
+**[Abu Hozaifa]** |www.linkedin.com/in/abu-hozaifa-retail-analyst
+
 
 Feedback is welcome. I'm still learning.
