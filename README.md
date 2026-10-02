@@ -1,6 +1,6 @@
 # Retail SQL Practice (SQL Server)
 
-Real-world retail questions, real SQL skills. Levels 1-2 cover five core skills, and Level 3 adds a profitability exercise with JOINs, KPIs and validation. Each query answers a question a Sales, Store or Category Manager might ask.
+Real-world retail questions, real SQL skills. Levels 1-2 cover five core skills, Level 3 adds a profitability exercise with JOINs, KPIs and validation, and Level 4 adds window functions and margin analysis. Each query answers a question a Sales, Store or Category Manager might ask.
 
 > The dataset is **synthetic** (made up for practice). No real company data is used.
 
@@ -11,6 +11,7 @@ Real-world retail questions, real SQL skills. Levels 1-2 cover five core skills,
 | `setup.sql` | Creates the database, tables and all sample data (run this first) |
 | `queries.sql` | The 5 solved queries (Levels 1-2) with the business question above each one |
 | `level3_store_profitability.sql` | Level 3 exercise: store profitability (JOIN + KPIs + validation) |
+| `level4_advanced_analytics.sql` | Level 4 exercises: LAG, ROW_NUMBER, margin analysis, RANK vs DENSE_RANK |
 | `fact_sales.csv`, `dim_product.csv`, `dim_store.csv` | The same data as CSV files |
 
 ## The 5 questions
@@ -65,7 +66,7 @@ erDiagram
 1. Open **SQL Server Management Studio (SSMS)** and connect to your server.
 2. Open `setup.sql` and click **Execute**. The last query should return `16 | 6 | 508`.
 3. Open `queries.sql` and run each query one at a time (highlight it, then press **F5**).
-4. For Level 3, open `level3_store_profitability.sql` and run each query the same way.
+4. For Levels 3 and 4, open `level3_store_profitability.sql` or `level4_advanced_analytics.sql` and run each query the same way.
 
 `setup.sql` is safe to re-run: it drops and recreates the three tables.
 
@@ -126,6 +127,44 @@ erDiagram
 
 > Practice dataset (synthetic data), not real business results.
 
+## Level 4: Window functions + margin analysis
+
+Four challenges in [`level4_advanced_analytics.sql`](level4_advanced_analytics.sql).
+
+| # | Business question | SQL skill | Key result |
+|---|---|---|---|
+| 1 | How did total sales change month to month? | `LAG()` | Feb -31.7%, then Mar +23.1% (Jan 47,921 -> Feb 32,738 -> Mar 40,311) |
+| 2 | Who are the top 3 customers in each store? | `ROW_NUMBER()` + `PARTITION BY` | Biggest spender: C152 in S02 with 1,857 |
+| 3 | Which categories and products keep the most of each sale? | JOIN + margin KPI | Personal Care 46.8% margin, Grocery 35.7% |
+| 4 | How do the three ranking functions differ? | `ROW_NUMBER`, `RANK`, `DENSE_RANK` | See below |
+
+**Margin by category** (`gross_profit = net_sales - quantity * unit_cost`)
+
+| category | net_sales | gross_profit | gross_margin_pct |
+|---|---|---|---|
+| Personal Care | 20,937 | 9,801 | 46.8 |
+| Beverages | 7,798 | 3,178 | 40.8 |
+| Household | 10,113 | 3,808 | 37.7 |
+| Electronics | 29,925 | 11,085 | 37.0 |
+| Grocery | 52,197 | 18,631 | 35.7 |
+
+**Insight:** Grocery is the biggest category but has the lowest margin. Personal Care is smaller but keeps the most of each sale.
+
+**RANK vs DENSE_RANK vs ROW_NUMBER** (customers ranked by purchases, store S01)
+
+| customer_id | purchases | row_num | rnk | dense_rnk |
+|---|---|---|---|---|
+| C117 | 5 | 1 | 1 | 1 |
+| C101 | 4 | 2 | 2 | 2 |
+| C116 | 4 | 3 | 2 | 2 |
+| C155 | 4 | 4 | 2 | 2 |
+| C105 | 3 | 5 | 5 | 3 |
+| C106 | 3 | 6 | 5 | 3 |
+
+- `ROW_NUMBER` never ties, so it needs a tie-breaker (here `customer_id`).
+- `RANK` shares a rank for ties, then skips numbers (1, 2, 2, 2, 5).
+- `DENSE_RANK` shares a rank for ties, with no gaps (1, 2, 2, 2, 3).
+
 ## What I learned
 
 - `GROUP BY` collapses rows into one per group. A window function ranks rows **without** collapsing them.
@@ -133,6 +172,9 @@ erDiagram
 - Sales rank alone can hide profitability. Always check margin as well.
 - Validate your joins: totals before and after the joins must match.
 - Protect divisions with `NULLIF` so a zero never breaks a KPI.
+- `LAG()` compares a row with the previous one, with no self-join needed.
+- `ROW_NUMBER` + `PARTITION BY` gives top N per group. Add a tie-breaker.
+- The biggest category is not always the most profitable.
 - Mistakes I caught in my own first drafts:
   - `BETWEEN '...' AND '2025-01-10'` can miss late-day rows if the column has a time part. Use `>= start AND < next day`.
   - A `GROUP BY` with no aggregate is unnecessary. I removed it from the CASE query.
@@ -140,10 +182,10 @@ erDiagram
 
 ## Next challenges
 
-- Month-over-month sales growth with `LAG()`
-- Top 3 customers per store with `ROW_NUMBER()`
-- Profit margin per product and per category using `unit_cost`
-- Compare `RANK`, `DENSE_RANK` and `ROW_NUMBER` on the same data
+- Running total and 7-day moving average of daily sales
+- Loyal vs occasional customers (active months per customer)
+- Store and product combinations that never sold (`CROSS JOIN` + `LEFT JOIN`)
+- Which products surged from February to March
 
 ## Author
 
