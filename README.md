@@ -152,7 +152,7 @@ Four challenges in [`level4_advanced_analytics.sql`](level4_advanced_analytics.s
 
 **RANK vs DENSE_RANK vs ROW_NUMBER** (customers ranked by purchases, store S01)
 
-| customer_id | purchases | row_num | rnk | dense_rnk |
+| customer_id | purchases | row_number_rank | rank_with_gaps | dense_rank_no_gaps |
 |---|---|---|---|---|
 | C117 | 5 | 1 | 1 | 1 |
 | C101 | 4 | 2 | 2 | 2 |
@@ -161,9 +161,9 @@ Four challenges in [`level4_advanced_analytics.sql`](level4_advanced_analytics.s
 | C105 | 3 | 5 | 5 | 3 |
 | C106 | 3 | 6 | 5 | 3 |
 
-- `ROW_NUMBER` never ties, so it needs a tie-breaker (here `customer_id`).
-- `RANK` shares a rank for ties, then skips numbers (1, 2, 2, 2, 5).
-- `DENSE_RANK` shares a rank for ties, with no gaps (1, 2, 2, 2, 3).
+- `ROW_NUMBER` (`row_number_rank`) never ties, so it needs a tie-breaker (here `customer_id`).
+- `RANK` (`rank_with_gaps`) shares a rank for ties, then skips numbers (1, 2, 2, 2, 5).
+- `DENSE_RANK` (`dense_rank_no_gaps`) shares a rank for ties, with no gaps (1, 2, 2, 2, 3).
 
 ## What I learned
 
