@@ -1,6 +1,6 @@
 # Retail SQL Practice (SQL Server)
 
-Real-world retail questions, real SQL skills. Levels 1-2 cover five core skills, Level 3 adds a profitability exercise with JOINs, KPIs and validation, and Level 4 adds window functions and margin analysis. Each query answers a question a Sales, Store or Category Manager might ask.
+Real-world retail questions, real SQL skills. Levels 1-2 cover five core skills, Level 3 adds a profitability exercise with JOINs, KPIs and validation, Level 4 adds window functions and margin analysis, and Level 5 adds trends, customer segments and sales gaps. Each query answers a question a Sales, Store or Category Manager might ask.
 
 > The dataset is **synthetic** (made up for practice). No real company data is used.
 
@@ -12,6 +12,7 @@ Real-world retail questions, real SQL skills. Levels 1-2 cover five core skills,
 | `queries.sql` | The 5 solved queries (Levels 1-2) with the business question above each one |
 | `level3_store_profitability.sql` | Level 3 exercise: store profitability (JOIN + KPIs + validation) |
 | `level4_advanced_analytics.sql` | Level 4 exercises: LAG, ROW_NUMBER, margin analysis, RANK vs DENSE_RANK |
+| `level5_trends_and_segments.sql` | Level 5 exercises: moving average, customer segments, never-sold gaps, month-to-month surge |
 | `fact_sales.csv`, `dim_product.csv`, `dim_store.csv` | The same data as CSV files |
 
 ## The 5 questions
@@ -66,7 +67,7 @@ erDiagram
 1. Open **SQL Server Management Studio (SSMS)** and connect to your server.
 2. Open `setup.sql` and click **Execute**. The last query should return `16 | 6 | 508`.
 3. Open `queries.sql` and run each query one at a time (highlight it, then press **F5**).
-4. For Levels 3 and 4, open `level3_store_profitability.sql` or `level4_advanced_analytics.sql` and run each query the same way.
+4. For Levels 3, 4 and 5, open `level3_store_profitability.sql`, `level4_advanced_analytics.sql` or `level5_trends_and_segments.sql` and run each query the same way.
 
 `setup.sql` is safe to re-run: it drops and recreates the three tables.
 
@@ -165,6 +166,50 @@ Four challenges in [`level4_advanced_analytics.sql`](level4_advanced_analytics.s
 - `RANK` (`rank_with_gaps`) shares a rank for ties, then skips numbers (1, 2, 2, 2, 5).
 - `DENSE_RANK` (`dense_rank_no_gaps`) shares a rank for ties, with no gaps (1, 2, 2, 2, 3).
 
+## Level 5: Trends, segments and gaps
+
+Four challenges in [`level5_trends_and_segments.sql`](level5_trends_and_segments.sql).
+
+| # | Business question | SQL skill | Key result |
+|---|---|---|---|
+| 1 | How do daily sales build up, and what is the recent trend? | `SUM() OVER` + `AVG() OVER` with `ROWS BETWEEN` | Running total ends at 120,970 = total net sales |
+| 2 | Who shops every month, and how much more do they spend? | `COUNT(DISTINCT)` + `CASE` | 48 of 60 customers are Loyal and bring 90% of sales |
+| 3 | Which products has each store never sold? | `CROSS JOIN` + `LEFT JOIN` + `IS NULL` | 5 of 96 store-product pairs never sold |
+| 4 | Which products surged from February to March? | Conditional aggregation (`CASE` inside `SUM`) | Orange Juice +265.9% |
+
+**Loyal vs occasional customers** (Loyal = active in all 3 months)
+
+| customer_type | customers | net_sales | avg_net_sales_per_customer |
+|---|---|---|---|
+| Loyal | 48 | 108,975 | 2,270.3 |
+| Occasional | 12 | 11,995 | 999.6 |
+
+**Store and product combinations that never sold**
+
+| store_id | store_name | product_id | product_name |
+|---|---|---|---|
+| S02 | Riyadh North | P007 | Air Fryer |
+| S04 | Jeddah Corniche | P007 | Air Fryer |
+| S05 | Dammam Central | P001 | Coffee |
+| S06 | Khobar Express | P002 | Blender |
+| S06 | Khobar Express | P010 | Body Lotion |
+
+**Top 5 products by growth, February to March**
+
+| product_name | february_sales | march_sales | growth_pct |
+|---|---|---|---|
+| Orange Juice | 375 | 1,372 | 265.9 |
+| Electric Kettle | 684 | 2,234 | 226.6 |
+| Mineral Water Pack | 945 | 3,019 | 219.5 |
+| Olive Oil | 2,657 | 6,593 | 148.1 |
+| Dates | 3,216 | 7,159 | 122.6 |
+
+**Notes**
+
+- `ROWS BETWEEN 6 PRECEDING AND CURRENT ROW` is a 7-day window here because every day has sales.
+- `AVG()` of an `INT` column drops decimals in SQL Server, so the query multiplies by `1.0` first.
+- A growth % needs context: Orange Juice grew from a small base (375 to 1,372). Biggest drops were Blender (-100%), Toothpaste (-91.8%) and Shampoo (-59.0%).
+
 ## What I learned
 
 - `GROUP BY` collapses rows into one per group. A window function ranks rows **without** collapsing them.
@@ -175,6 +220,9 @@ Four challenges in [`level4_advanced_analytics.sql`](level4_advanced_analytics.s
 - `LAG()` compares a row with the previous one, with no self-join needed.
 - `ROW_NUMBER` + `PARTITION BY` gives top N per group. Add a tie-breaker.
 - The biggest category is not always the most profitable.
+- `ROWS BETWEEN` controls a window frame. Multiply by `1.0` before `AVG()` on integers.
+- `CROSS JOIN` + `LEFT JOIN` + `IS NULL` finds what never happened.
+- A growth percentage needs context: check the starting size.
 - Mistakes I caught in my own first drafts:
   - `BETWEEN '...' AND '2025-01-10'` can miss late-day rows if the column has a time part. Use `>= start AND < next day`.
   - A `GROUP BY` with no aggregate is unnecessary. I removed it from the CASE query.
@@ -182,10 +230,10 @@ Four challenges in [`level4_advanced_analytics.sql`](level4_advanced_analytics.s
 
 ## Next challenges
 
-- Running total and 7-day moving average of daily sales
-- Loyal vs occasional customers (active months per customer)
-- Store and product combinations that never sold (`CROSS JOIN` + `LEFT JOIN`)
-- Which products surged from February to March
+- Pareto (80/20): which products make up 80% of sales?
+- New vs returning customers each month
+- Best and worst weekday per store
+- Each store's share of company sales, per category
 
 ## Author
 
