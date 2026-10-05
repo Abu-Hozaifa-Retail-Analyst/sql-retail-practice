@@ -1,0 +1,7 @@
+store_id,store_name,city,store_type
+S01,Riyadh Central,Riyadh,Supermarket
+S02,Riyadh North,Riyadh,Hypermarket
+S03,Jeddah Mall,Jeddah,Supermarket
+S04,Jeddah Corniche,Jeddah,Hypermarket
+S05,Dammam Central,Dammam,Supermarket
+S06,Khobar Express,Khobar,Convenience

@@ -1,0 +1,17 @@
+product_id,product_name,category,unit_cost
+P001,Coffee,Grocery,60
+P002,Blender,Electronics,150
+P003,Shampoo,Personal Care,25
+P004,Olive Oil,Grocery,28
+P005,Basmati Rice,Grocery,52
+P006,Dates,Grocery,35
+P007,Air Fryer,Electronics,260
+P008,Headphones,Electronics,110
+P009,Electric Kettle,Electronics,70
+P010,Body Lotion,Personal Care,20
+P011,Toothpaste,Personal Care,7
+P012,Perfume,Personal Care,170
+P013,Laundry Detergent,Household,35
+P014,Dish Soap,Household,10
+P015,Orange Juice,Beverages,7
+P016,Mineral Water Pack,Beverages,14
