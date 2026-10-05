@@ -1,6 +1,6 @@
 # Retail SQL Practice (SQL Server)
 
-Real-world retail questions, real SQL skills. Levels 1-2 cover five core skills, Level 3 adds a profitability exercise with JOINs, KPIs and validation, Level 4 adds window functions and margin analysis, and Level 5 adds trends, customer segments and sales gaps. Each query answers a question a Sales, Store or Category Manager might ask.
+Real-world retail questions, real SQL skills. Levels 1-2 cover five core skills, Level 3 adds a profitability exercise with JOINs, KPIs and validation, Level 4 adds window functions and margin analysis, Level 5 adds trends, customer segments and sales gaps, and Level 6 adds Pareto analysis, customer cohorts, weekday patterns and store shares. Each query answers a question a Sales, Store or Category Manager might ask.
 
 > The dataset is **synthetic** (made up for practice). No real company data is used.
 
@@ -13,6 +13,7 @@ Real-world retail questions, real SQL skills. Levels 1-2 cover five core skills,
 | `level3_store_profitability.sql` | Level 3 exercise: store profitability (JOIN + KPIs + validation) |
 | `level4_advanced_analytics.sql` | Level 4 exercises: LAG, ROW_NUMBER, margin analysis, RANK vs DENSE_RANK |
 | `level5_trends_and_segments.sql` | Level 5 exercises: moving average, customer segments, never-sold gaps, month-to-month surge |
+| `level6_pareto_and_shares.sql` | Level 6 exercises: Pareto 80/20, new vs returning customers, best/worst weekday, store shares |
 | `fact_sales.csv`, `dim_product.csv`, `dim_store.csv` | The same data as CSV files |
 
 ## The 5 questions
@@ -67,7 +68,7 @@ erDiagram
 1. Open **SQL Server Management Studio (SSMS)** and connect to your server.
 2. Open `setup.sql` and click **Execute**. The last query should return `16 | 6 | 508`.
 3. Open `queries.sql` and run each query one at a time (highlight it, then press **F5**).
-4. For Levels 3, 4 and 5, open `level3_store_profitability.sql`, `level4_advanced_analytics.sql` or `level5_trends_and_segments.sql` and run each query the same way.
+4. For Levels 3 to 6, open the matching `levelN_*.sql` file (for example `level6_pareto_and_shares.sql`) and run each query the same way.
 
 `setup.sql` is safe to re-run: it drops and recreates the three tables.
 
@@ -210,6 +211,76 @@ Four challenges in [`level5_trends_and_segments.sql`](level5_trends_and_segments
 - `AVG()` of an `INT` column drops decimals in SQL Server, so the query multiplies by `1.0` first.
 - A growth % needs context: Orange Juice grew from a small base (375 to 1,372). Biggest drops were Blender (-100%), Toothpaste (-91.8%) and Shampoo (-59.0%).
 
+## Level 6: Pareto, cohorts, weekdays and store shares
+
+Four challenges in [`level6_pareto_and_shares.sql`](level6_pareto_and_shares.sql).
+
+| # | Business question | SQL skill | Key result |
+|---|---|---|---|
+| 1 | Which products make up 80% of sales? | Running `SUM() OVER` + `CASE` | 10 of 16 products (62%) reach 80%, so not a strict 80/20 |
+| 2 | How many customers are new vs returning each month? | `MIN()` per customer + conditional `SUM` | By March, 57 of 59 active customers were returning |
+| 3 | Which weekday is best and worst for each store? | `DATENAME` + two `RANK()` calls | Friday is best in 3 of 6 stores, Tuesday worst in 4 |
+| 4 | What share of each category does each store hold? | `SUM() OVER (PARTITION BY ...)` | S02 leads 3 of 5 categories |
+
+**Pareto: products ranked by sales** (first 11 of 16 rows)
+
+| product_name | net_sales | cumulative_pct | pareto_group |
+|---|---|---|---|
+| Dates | 15,110 | 12.5 | Core 80% |
+| Basmati Rice | 13,550 | 23.7 | Core 80% |
+| Coffee | 12,226 | 33.8 | Core 80% |
+| Olive Oil | 11,311 | 43.1 | Core 80% |
+| Headphones | 10,923 | 52.2 | Core 80% |
+| Shampoo | 8,187 | 58.9 | Core 80% |
+| Electric Kettle | 7,547 | 65.2 | Core 80% |
+| Laundry Detergent | 7,463 | 71.4 | Core 80% |
+| Blender | 7,251 | 77.3 | Core 80% |
+| Body Lotion | 6,071 | 82.4 | Core 80% |
+| Mineral Water Pack | 5,769 | 87.1 | Tail |
+
+**New vs returning customers**
+
+| sales_month | active_customers | new_customers | returning_customers |
+|---|---|---|---|
+| 1 | 54 | 54 | 0 |
+| 2 | 53 | 4 | 49 |
+| 3 | 59 | 2 | 57 |
+
+**Best and worst weekday per store**
+
+| store_id | weekday_name | net_sales | day_type |
+|---|---|---|---|
+| S01 | Friday | 5,642 | Best |
+| S01 | Tuesday | 1,106 | Worst |
+| S02 | Friday | 5,204 | Best |
+| S02 | Tuesday | 2,956 | Worst |
+| S03 | Wednesday | 3,968 | Best |
+| S03 | Thursday | 1,291 | Worst |
+| S04 | Friday | 6,198 | Best |
+| S04 | Tuesday | 1,934 | Worst |
+| S05 | Sunday | 2,722 | Best |
+| S05 | Thursday | 972 | Worst |
+| S06 | Saturday | 3,685 | Best |
+| S06 | Tuesday | 104 | Worst |
+
+**Leading store in each category**
+
+| category | store_id | net_sales | category_share_pct | store_rank |
+|---|---|---|---|---|
+| Beverages | S01 | 2,135 | 27.4 | 1 |
+| Electronics | S02 | 8,967 | 30.0 | 1 |
+| Grocery | S02 | 14,832 | 28.4 | 1 |
+| Household | S04 | 3,166 | 31.3 | 1 |
+| Personal Care | S02 | 4,713 | 22.5 | 1 |
+
+**Notes**
+
+- Pareto is a test, not a law: this dataset is spread evenly, so it takes 62% of the products to reach 80% of sales.
+- The data starts in January, so every January customer counts as new by definition.
+- `DATENAME(weekday, ...)` returns the day name in the session language (English by default).
+- Fair comparison: Tuesday occurs 12 times in Jan 1 - Mar 31, 2025 and the other weekdays 13 times, so compare average sales per day before drawing conclusions.
+- Shares inside one category add up to 100 (rounding can show 100.1).
+
 ## What I learned
 
 - `GROUP BY` collapses rows into one per group. A window function ranks rows **without** collapsing them.
@@ -223,6 +294,10 @@ Four challenges in [`level5_trends_and_segments.sql`](level5_trends_and_segments
 - `ROWS BETWEEN` controls a window frame. Multiply by `1.0` before `AVG()` on integers.
 - `CROSS JOIN` + `LEFT JOIN` + `IS NULL` finds what never happened.
 - A growth percentage needs context: check the starting size.
+- Pareto is a test, not a law. Check how concentrated your sales really are.
+- A running `SUM() OVER` turns a ranking into a cumulative share.
+- `SUM() OVER (PARTITION BY ...)` gives shares without a self-join.
+- Compare fairly: check that periods contain equal numbers of days.
 - Mistakes I caught in my own first drafts:
   - `BETWEEN '...' AND '2025-01-10'` can miss late-day rows if the column has a time part. Use `>= start AND < next day`.
   - A `GROUP BY` with no aggregate is unnecessary. I removed it from the CASE query.
@@ -230,10 +305,10 @@ Four challenges in [`level5_trends_and_segments.sql`](level5_trends_and_segments
 
 ## Next challenges
 
-- Pareto (80/20): which products make up 80% of sales?
-- New vs returning customers each month
-- Best and worst weekday per store
-- Each store's share of company sales, per category
+- Average daily sales per weekday (a fair weekday comparison)
+- Month-to-month customer retention rate
+- Do discounted sales have a different average transaction value?
+- Rank stores inside each city (Riyadh and Jeddah have two stores each)
 
 ## Author
 
